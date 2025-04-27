@@ -1,0 +1,24 @@
+CC = gcc
+ASM = nasm
+LD = ld
+CFLAGS = -m32 -nostdlib -ffreestanding -Wall
+ASMFLAGS = -f elf32
+
+all: csos.iso
+
+csos.iso: kernel.bin bootloader.bin
+    mkdir -p iso/boot/grub
+    cp kernel.bin iso/boot/
+    cp bootloader.bin iso/boot/
+    echo "menuentry 'CSOS' { multiboot /boot/kernel.bin }" > iso/boot/grub/grub.cfg
+    grub-mkrescue -o csos.iso iso/
+
+kernel.bin: kernel.o gdt.o idt.o
+    $(LD) -m elf_i386 -T linker.ld -o $@ $^
+
+bootloader.bin: boot.asm
+    $(ASM) -f bin -o $@ $^
+
+clean:
+    rm -f *.o *.bin *.iso
+    rm -rf iso/
